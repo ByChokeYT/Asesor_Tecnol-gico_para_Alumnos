@@ -125,7 +125,7 @@ def generate_fallback_recommendation(answers: Answers) -> Recommendation:
 
 # --- Endpoint Principal ---
 
-@app.post("/api/diagnostico", response_model=Recommendation)
+@app.post("/diagnostico", response_model=Recommendation)
 async def get_diagnostico(answers: Answers):
     
     # 1. Comprobar si hay una API Key de OpenAI configurada
@@ -199,4 +199,3 @@ Variables del Alumno:
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-

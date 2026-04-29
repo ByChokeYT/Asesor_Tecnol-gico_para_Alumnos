@@ -164,7 +164,11 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
       setStep(7);
     } catch (error) {
       console.error("Error al consultar la API:", error);
-      alert("Hubo un error al conectar con la Inteligencia Artificial (Backend). Asegúrate de que el servidor FastAPI esté corriendo en el puerto 8000.");
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const errorMsg = isLocalhost 
+        ? "Hubo un error al conectar con el Backend. Asegúrate de que el servidor FastAPI esté corriendo (típicamente en el puerto 8000)."
+        : "Hubo un error al conectar con la Inteligencia Artificial. Por favor, intenta de nuevo en unos momentos o contacta al administrador.";
+      alert(errorMsg);
     } finally {
       setIsGenerating(false);
     }
