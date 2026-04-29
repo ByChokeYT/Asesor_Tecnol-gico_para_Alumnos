@@ -156,7 +156,8 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
       });
 
       if (!response.ok) {
-        throw new Error("Error en la respuesta del servidor");
+        const errorText = await response.text();
+        throw new Error(`Servidor respondió con código ${response.status}: ${errorText}`);
       }
 
       const rec = await response.json();
@@ -166,8 +167,8 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
       console.error("Error al consultar la API:", error);
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const errorMsg = isLocalhost 
-        ? "Hubo un error al conectar con el Backend. Asegúrate de que el servidor FastAPI esté corriendo (típicamente en el puerto 8000)."
-        : "Hubo un error al conectar con la Inteligencia Artificial. Por favor, intenta de nuevo en unos momentos o contacta al administrador.";
+        ? `Error local: ${error.message}. Asegúrate de que FastAPI esté en el puerto 8000.`
+        : `Error en producción: ${error.message}. Por favor, reporta este código al administrador.`;
       alert(errorMsg);
     } finally {
       setIsGenerating(false);
