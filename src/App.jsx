@@ -344,8 +344,12 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
       <div className="max-w-3xl w-full">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center p-3 bg-blue-600 rounded-2xl mb-4 text-white shadow-lg">
-            <Cpu className="w-8 h-8" />
+          <div className="inline-flex items-center justify-center p-2 bg-white rounded-2xl mb-4 shadow-xl border border-gray-100 overflow-hidden w-24 h-24">
+            <img 
+              src="/thumbs-up-nice.gif" 
+              alt="Nice!" 
+              className="w-full h-full object-cover"
+            />
           </div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Asesor de Arquitectura de Software</h1>
           <p className="mt-2 text-lg text-gray-600">
@@ -503,20 +507,13 @@ function LoadingOverlay() {
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-md"
     >
       <div className="relative">
-        <motion.div 
-          animate={{ 
-            rotate: 360,
-            scale: [1, 1.1, 1],
-          }}
-          transition={{ 
-            rotate: { repeat: Infinity, duration: 2, ease: "linear" },
-            scale: { repeat: Infinity, duration: 2, ease: "easeInOut" }
-          }}
-          className="w-20 h-20 border-4 border-blue-100 border-t-blue-600 rounded-full"
-        />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Sparkles className="w-8 h-8 text-blue-600 animate-pulse" />
-        </div>
+        <lord-icon
+            src="https://cdn.lordicon.com/enzmyuau.json"
+            trigger="loop"
+            state="loop-cycle"
+            colors="primary:#2563eb,secondary:#60a5fa"
+            style={{ width: '120px', height: '120px' }}>
+        </lord-icon>
       </div>
       <motion.p 
         key={textIndex}
