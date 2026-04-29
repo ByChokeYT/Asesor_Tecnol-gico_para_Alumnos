@@ -30,6 +30,8 @@ class Answers(BaseModel):
     budget: str
     timeline: str
     skill: str
+    teamSize: str
+    goal: str
 
 class Recommendation(BaseModel):
     approach: str
@@ -50,6 +52,8 @@ def generate_fallback_recommendation(answers: Answers) -> Recommendation:
     budget = answers.budget
     timeline = answers.timeline
     skill = answers.skill
+    teamSize = answers.teamSize
+    goal = answers.goal
 
     logicalGapWarning = None
     profeAdvice = ""
@@ -63,66 +67,48 @@ def generate_fallback_recommendation(answers: Answers) -> Recommendation:
 
     isFastCheapAndComplex = (timeline in ['days', 'weeks']) and budget == 'low' and complexity == 'high'
     isBeginnerCustom = skill == 'beginner' and type_ in ['saas', 'pos', 'ai'] and timeline == 'days'
+    isLargeTeamSmallProject = teamSize == 'large' and type_ == 'landing'
 
     if isFastCheapAndComplex:
-        logicalGapWarning = "¡Atención! Estás intentando construir algo complejo, sin dinero y sin tiempo. En ingeniería de software existe el 'Triángulo de Hierro'. Debes sacrificar alcance (hacer menos funcionalidades), conseguir más tiempo, o usar herramientas No-Code (SaaS)."
+        logicalGapWarning = "¡Atención! Estás intentando construir algo complejo, sin dinero y sin tiempo. En ingeniería de software existe el 'Triángulo de Hierro'. Debes sacrificar alcance, conseguir más tiempo, o usar herramientas No-Code."
     elif isBeginnerCustom:
-        logicalGapWarning = "Laguna lógica detectada: El equipo es principiante pero quiere lanzar un sistema complejo en días. Esto resultará en código inmanejable (deuda técnica). La recomendación forzosa es usar No-Code o plantillas."
+        logicalGapWarning = "Laguna lógica detectada: El equipo es principiante pero quiere lanzar un sistema complejo en días. Esto resultará en deuda técnica masiva. Recomendación: No-Code o plantillas."
+    elif isLargeTeamSmallProject:
+        profeAdvice = "Profe tip: Tienen un equipo grande para un proyecto simple. Dividan bien las tareas para no pisarse los talones; a veces 'muchos cocineros arruinan el caldo' en proyectos pequeños."
 
-    if timeline == 'days' or (skill == 'beginner' and budget == 'low') or (type_ == 'ecommerce' and budget == 'low' and timeline != 'months'):
-        approachTitle = "Producto Viable Mínimo (PVM) mediante SaaS / No-Code"
-        approach = "No reinventes la rueda. Para validar tu idea rápido y sin presupuesto, usa plataformas existentes. Un desarrollo a medida ahora mismo es un riesgo innecesario."
-        hosting = "Plataformas SaaS (Cloud del proveedor)"
-        backend = "Integrado en la plataforma"
-        database = "Gestionada por la plataforma"
+    if timeline == 'days' or (skill == 'beginner' and budget == 'low' and goal != 'scale') or (type_ == 'ecommerce' and budget == 'low' and timeline != 'months'):
+        approachTitle = "PVM mediante SaaS / No-Code"
+        approach = f"Dado que el objetivo es {goal} y tienen poco tiempo/presupuesto, lo mejor es validar rápido. No reinventes la rueda."
+        hosting = "Plataformas SaaS"
+        backend = "Integrado"
+        database = "Gestionada"
         
         if type_ == 'ecommerce':
-            frontend = "Shopify, WooCommerce o Tiendanube"
+            frontend = "Shopify o WooCommerce"
             monthlyCost = "$20 - $40 USD / mes"
-            roadmap = ["Registra tu dominio", "Configura la tienda base", "Añade productos de prueba", "Configura pasarela de pago"]
-        elif type_ == 'pos':
-            frontend = "Odoo POS, Square o Excel/Google Sheets (PVM extremo)"
-            monthlyCost = "$0 - $30 USD / mes"
-            roadmap = ["Define tu inventario base", "Configura el sistema POS", "Prueba flujos de venta en caja", "Capacita al personal"]
-        elif type_ == 'landing':
-            frontend = "Framer, Webflow o WordPress"
-            monthlyCost = "$0 - $15 USD / mes"
-            roadmap = ["Define el copy y estructura", "Elige una plantilla base", "Personaliza con tus colores/logo", "Publica y enlaza dominio"]
-        elif type_ == 'mobile':
-            frontend = "Glide, FlutterFlow o Adalo"
-            monthlyCost = "$25 - $50 USD / mes"
-            roadmap = ["Diseña el modelo de datos básico", "Crea las pantallas principales", "Configura acciones y flujos", "Prueba en dispositivo real"]
-        elif type_ == 'ai':
-            frontend = "Streamlit o Gradio"
-            monthlyCost = "$10 - $30 USD / mes"
-            roadmap = ["Define el caso de uso de IA", "Crea interfaz simple en Streamlit", "Conecta con API (OpenAI/Claude)", "Despliega en Streamlit Cloud"]
+            roadmap = ["Registra dominio", "Configura tienda", "Sube productos", "Pagos"]
         else:
-            frontend = "Bubble o Softr + Airtable"
+            frontend = "Bubble, FlutterFlow o Softr"
             monthlyCost = "$20 - $50 USD / mes"
-            roadmap = ["Define estructura de datos", "Crea flujos de usuario", "Diseña UI en la plataforma", "Lanza versión de prueba"]
+            roadmap = ["Define datos", "Crea UI", "Configura flujos", "Lanza"]
     else:
         approachTitle = "Desarrollo a Medida (Custom Build)"
-        approach = "Tienes las condiciones (tiempo, equipo o presupuesto) para construir una solución propia que pueda escalar y adaptarse exactamente a tus necesidades."
+        approach = f"Tienen las condiciones para construir una solución propia. El objetivo de {goal} sugiere que un desarrollo personalizado dará mejores resultados a largo plazo."
         
         if skill in ['beginner', 'intermediate']:
-            frontend = "React Native (Expo)" if type_ == 'mobile' else "React.js / Next.js"
-            backend = "Supabase (Backend as a Service) o Firebase"
-            database = "PostgreSQL (Supabase) o Firestore"
-            hosting = "Vercel (Frontend) + Supabase (Backend)"
-            monthlyCost = "$0 - $25 USD / mes (Capa gratuita inicial)"
-            roadmap = ["Configura proyecto en Supabase", "Crea esquema de Base de Datos", "Configura proyecto Vite/Next.js", "Conecta UI con backend"]
+            frontend = "React / Next.js"
+            backend = "Supabase o Firebase"
+            database = "PostgreSQL o Firestore"
+            hosting = "Vercel + Supabase"
+            monthlyCost = "$0 - $25 USD / mes"
+            roadmap = ["Setup Supabase", "Esquema DB", "Proyecto React", "Conectar API"]
         else:
-            frontend = "Flutter / React Native" if type_ == 'mobile' else "Next.js / Angular"
-            backend = "Node.js (NestJS / Express) o Python (FastAPI)"
-            database = "PostgreSQL (Relacional) o MongoDB"
-            hosting = "AWS, Google Cloud o VPS (DigitalOcean)"
-            monthlyCost = "$20 - $100+ USD / mes (Depende del tráfico)"
-            roadmap = ["Diseña arquitectura de microservicios o monolito", "Configura base de datos y migraciones", "Implementa APIs y autenticación", "Configura CI/CD para despliegues automáticos"]
-
-        if type_ == 'pos':
-            profeAdvice = "Profe tip: Un POS requiere funcionar offline o con mala conexión. Considera arquitecturas Local-first (ej. PWA con IndexedDB o aplicaciones de escritorio con Electron) si el internet del cliente final no es confiable."
-        if type_ == 'ai':
-            profeAdvice = "Profe tip: No reinventes la rueda entrenando modelos desde cero si no tienes experiencia. Usa APIs existentes (OpenAI, Anthropic) para validar tu idea de negocio primero."
+            frontend = "Next.js / Flutter"
+            backend = "FastAPI o Node.js"
+            database = "PostgreSQL"
+            hosting = "AWS o DigitalOcean"
+            monthlyCost = "$20 - $100+ USD / mes"
+            roadmap = ["Arquitectura", "Config DB", "APIs & Auth", "CI/CD"]
 
     return Recommendation(
         approach=approach,
@@ -153,27 +139,30 @@ async def get_diagnostico(answers: Answers):
 Eres el "Asesor de Tecnología by Choke", un profesor de ingeniería de software experto, directo, profesional y con un toque de sabiduría práctica (estilo "senior architect").
 Tu objetivo es ayudar a los alumnos a elegir el stack tecnológico adecuado para su proyecto integrador, evitando "lagunas lógicas" (decisiones que no tienen sentido técnico o económico).
 
-Recibirás 4 variables:
+Recibirás las siguientes variables clave:
 1. Tipo de Proyecto (ecommerce, pos, landing, saas, mobile, ai)
 2. Presupuesto (low: $0-50, medium: $50-200, high: +$500)
 3. Tiempo (days, weeks, months)
-4. Nivel Técnico (beginner, intermediate, advanced)
+4. Nivel Técnico del Equipo (beginner, intermediate, advanced)
+5. Tamaño del Equipo (solo, small: 2-3, large: 4+)
+6. Objetivo Principal (learn: académico, build: negocio/PVM, scale: profesional/escalable)
 
 DEBES RESPONDER ÚNICAMENTE EN FORMATO JSON siguiendo este esquema:
 {
-  "approachTitle": "Título corto del enfoque (ej: PVM con No-Code, Microservicios Escalables, etc.)",
-  "approach": "Explicación detallada de por qué este enfoque es el mejor dada la situación.",
-  "frontend": "Tecnología de frontend recomendada",
-  "backend": "Tecnología de backend recomendada",
-  "database": "Base de datos recomendada",
-  "hosting": "Dónde desplegar el proyecto",
-  "monthlyCost": "Costo estimado en USD (ej: $10 - $25 USD / mes)",
-  "logicalGapWarning": "Opcional: Si hay una contradicción (ej: proyecto complejo en 3 días con $0), explica el riesgo.",
-  "profeAdvice": "Un consejo 'Profe Tip' breve y valioso para el alumno.",
+  "approachTitle": "Título corto del enfoque",
+  "approach": "Explicación detallada justificando el stack basado en el equipo, objetivo y restricciones.",
+  "frontend": "Tecnología de frontend",
+  "backend": "Tecnología de backend",
+  "database": "Base de datos",
+  "hosting": "Hosting/Infra",
+  "monthlyCost": "Costo estimado en USD",
+  "logicalGapWarning": "Opcional: Advertencia sobre contradicciones técnicas o de recursos.",
+  "profeAdvice": "Un consejo 'Profe Tip' breve y valioso (especialmente sobre el objetivo o tamaño del equipo).",
   "roadmap": ["Paso 1", "Paso 2", "Paso 3", "Paso 4"]
 }
 
-Sé realista. Si tienen poco tiempo y poco nivel, recomienda No-Code o frameworks simples. Si tienen nivel avanzado y tiempo, recomienda arquitecturas robustas.
+Considera el Tamaño del Equipo: si es solo, prioriza herramientas de alta productividad (BaaS, No-code). Si es grande, sugiere frameworks que permitan modularidad y tipado fuerte (TypeScript).
+Considera el Objetivo: si es Académico, sugiere tecnologías tendencia para el CV. Si es Negocio, prioriza velocidad de salida al mercado (time-to-market).
 """
 
             user_message = f"""
@@ -182,6 +171,8 @@ Variables del Alumno:
 - Presupuesto: {answers.budget}
 - Tiempo: {answers.timeline}
 - Nivel Técnico: {answers.skill}
+- Tamaño Equipo: {answers.teamSize}
+- Objetivo: {answers.goal}
 """
 
             response = await client.chat.completions.create(

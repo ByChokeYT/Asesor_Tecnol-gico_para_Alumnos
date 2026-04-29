@@ -6,7 +6,7 @@ import {
   Calculator, Code2, Store, Server, Smartphone, Globe, 
   Clock, Banknote, GraduationCap, AlertTriangle, CheckCircle2, 
   Cpu, Database, Cloud, Sparkles, Laptop, Rocket, ArrowRight, ArrowLeft,
-  Download, Copy, Check
+  Download, Copy, Check, User, Users, Users2
 } from 'lucide-react';
 
 const PROJECT_TYPES = [
@@ -36,6 +36,18 @@ const SKILL_LEVELS = [
   { id: 'advanced', label: 'Avanzado', icon: <Cpu className="w-6 h-6" />, desc: 'Arquitecturas completas' }
 ];
 
+const TEAM_SIZES = [
+  { id: 'solo', label: 'Solo yo (1 Persona)', icon: <User className="w-6 h-6" />, desc: 'Desarrollo independiente' },
+  { id: 'small', label: 'Equipo Pequeño (2-3)', icon: <Users className="w-6 h-6" />, desc: 'Colaboración cercana' },
+  { id: 'large', label: 'Equipo Grande (4+)', icon: <Users2 className="w-6 h-6" />, desc: 'Arquitectura y gestión' }
+];
+
+const GOALS = [
+  { id: 'learn', label: 'Aprender / Académico', icon: <GraduationCap className="w-6 h-6" />, desc: 'Nuevas tecnologías' },
+  { id: 'build', label: 'Lanzar Negocio (PVM)', icon: <Rocket className="w-6 h-6" />, desc: 'Velocidad de salida' },
+  { id: 'scale', label: 'Escalable / Profesional', icon: <Cpu className="w-6 h-6" />, desc: 'Robustez y calidad' }
+];
+
 export default function App() {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
@@ -46,7 +58,9 @@ export default function App() {
       type: null,
       budget: null,
       timeline: null,
-      skill: null
+      skill: null,
+      teamSize: null,
+      goal: null
     };
   });
   const [result, setResult] = useState(() => {
@@ -72,7 +86,7 @@ export default function App() {
   // Also save the step if they are in the middle of the flow
   useEffect(() => {
     if (result) {
-      localStorage.setItem('asesor-step', 5);
+      localStorage.setItem('asesor-step', 7);
     } else {
       localStorage.setItem('asesor-step', step);
     }
@@ -147,7 +161,7 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
 
       const rec = await response.json();
       setResult(rec);
-      setStep(5);
+      setStep(7);
     } catch (error) {
       console.error("Error al consultar la API:", error);
       alert("Hubo un error al conectar con la Inteligencia Artificial (Backend). Asegúrate de que el servidor FastAPI esté corriendo en el puerto 8000.");
@@ -159,7 +173,7 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
   const resetFlow = () => {
     setDirection(-1);
     setStep(1);
-    setAnswers({ type: null, budget: null, timeline: null, skill: null });
+    setAnswers({ type: null, budget: null, timeline: null, skill: null, teamSize: null, goal: null });
     setResult(null);
     localStorage.removeItem('asesor-answers');
     localStorage.removeItem('asesor-result');
@@ -220,6 +234,24 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
           />
         );
       case 5:
+        return (
+          <SelectionGrid 
+            title="5. ¿Cuántas personas integran el equipo?" 
+            options={TEAM_SIZES} 
+            selected={answers.teamSize} 
+            onSelect={(val) => handleSelect('teamSize', val)} 
+          />
+        );
+      case 6:
+        return (
+          <SelectionGrid 
+            title="6. ¿Cuál es el objetivo principal del proyecto?" 
+            options={GOALS} 
+            selected={answers.goal} 
+            onSelect={(val) => handleSelect('goal', val)} 
+          />
+        );
+      case 7:
         return renderResult();
       default:
         return null;
@@ -232,7 +264,7 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
     return (
       <div className="space-y-6">
         
-        <div ref={resultRef} className="space-y-6 bg-white p-2">
+        <div ref={resultRef} className="space-y-6 bg-white p-4 md:p-6">
           
           <h2 className="text-2xl font-bold text-gray-800 border-b pb-2">Diagnóstico del Proyecto</h2>
           
@@ -344,7 +376,7 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
       <div className="max-w-3xl w-full">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center p-2 bg-white rounded-2xl mb-4 shadow-xl border border-gray-100 overflow-hidden w-24 h-24">
+          <div className="inline-flex items-center justify-center p-2 bg-white rounded-2xl mb-4 shadow-xl border border-gray-100 overflow-hidden w-32 h-32">
             <img 
               src="/thumbs-up-nice.gif" 
               alt="Nice!" 
@@ -361,23 +393,23 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8">
           
           {/* Progress Bar */}
-          {step < 5 && (
+          {step < 7 && (
             <div className="mb-8">
               <div className="flex justify-between text-xs font-medium text-gray-400 mb-2">
-                <span>Paso {step} de 4</span>
-                <span>{Math.round((step / 4) * 100)}% Completado</span>
+                <span>Paso {step} de 6</span>
+                <span>{Math.round((step / 6) * 100)}% Completado</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
                   className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out" 
-                  style={{ width: `${(step / 4) * 100}%` }}
+                  style={{ width: `${(step / 6) * 100}%` }}
                 ></div>
               </div>
             </div>
           )}
 
           {/* Content with Framer Motion */}
-          <div className="min-h-[350px] relative">
+          <div className="relative">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
                 key={step}
@@ -387,19 +419,16 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
                 animate="center"
                 exit="exit"
                 transition={{ type: 'tween', ease: 'easeInOut', duration: 0.2 }}
-                className="w-full absolute top-0 left-0"
-                style={{ position: step === 5 ? 'relative' : 'absolute' }}
+                className="w-full"
               >
                 {renderStepContent()}
               </motion.div>
             </AnimatePresence>
           </div>
 
-          {/* Spacer to push controls down since absolute positioning collapses parent height for steps 1-4 */}
-          {step < 5 && <div className="h-[350px] sm:h-[280px]"></div>}
 
           {/* Footer Controls */}
-          {step < 5 && (
+          {step < 7 && (
             <div className="mt-8 flex justify-between border-t border-gray-100 pt-6">
               <button 
                 onClick={prevStep}
@@ -409,7 +438,7 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
                 <ArrowLeft className="w-4 h-4 mr-2" /> Atrás
               </button>
               
-              {step < 4 ? (
+              {step < 6 ? (
                 <button 
                   onClick={nextStep}
                   disabled={!Object.values(answers)[step - 1]}
@@ -420,8 +449,8 @@ ${result.roadmap?.length ? `Hoja de Ruta:\n${result.roadmap.map((s, i) => `${i+1
               ) : (
                 <button 
                   onClick={generateRecommendation}
-                  disabled={!answers.skill || isGenerating}
-                  className={`px-8 py-2.5 rounded-lg font-bold transition flex items-center ${(!answers.skill || isGenerating) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md hover:shadow-lg'}`}
+                  disabled={!answers.goal || isGenerating}
+                  className={`px-8 py-2.5 rounded-lg font-bold transition flex items-center ${(!answers.goal || isGenerating) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md hover:shadow-lg'}`}
                 >
                   {isGenerating ? 'Consultando IA...' : 'Generar Diagnóstico'} 
                   {!isGenerating && <CheckCircle2 className="w-5 h-5 ml-2" />}
