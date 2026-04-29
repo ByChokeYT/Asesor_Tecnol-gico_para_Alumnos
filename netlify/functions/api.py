@@ -9,7 +9,7 @@ from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from mangum import Mangum
 
-# Configurar logging para Netlify
+# Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -130,12 +130,17 @@ def generate_fallback_recommendation(answers: Answers) -> Recommendation:
 # --- Endpoints ---
 
 @app.get("/")
+@app.get("/api")
 async def health_check():
     return {"status": "ok", "message": "Asesor API is running"}
 
-@app.post("/diagnostico", response_model=Recommendation)
+# En Netlify, si redireccionamos /api/* -> /.netlify/functions/api
+# Mangum recibirá la ruta completa si no la manipulamos.
+# Escuchamos tanto en /diagnostico como en /api/diagnostico para ser robustos.
+@app.post("/diagnostico")
+@app.post("/api/diagnostico", response_model=Recommendation)
 async def get_diagnostico(answers: Answers, request: Request):
-    logger.info(f"Recibiendo diagnóstico: {answers}")
+    logger.info(f"Ruta solicitada: {request.url.path}")
     
     api_key = os.getenv("OPENAI_API_KEY")
     
@@ -145,29 +150,7 @@ async def get_diagnostico(answers: Answers, request: Request):
             
             system_prompt = """
 Eres el "Asesor de Tecnología by Choke", un profesor de ingeniería de software experto.
-Ayuda a los alumnos a elegir el stack tecnológico adecuado, evitando "lagunas lógicas".
-
-Variables:
-1. Tipo: {type}
-2. Presupuesto: {budget}
-3. Tiempo: {timeline}
-4. Nivel: {skill}
-5. Equipo: {teamSize}
-6. Objetivo: {goal}
-
-Responde en JSON:
-{
-  "approachTitle": "...",
-  "approach": "...",
-  "frontend": "...",
-  "backend": "...",
-  "database": "...",
-  "hosting": "...",
-  "monthlyCost": "...",
-  "logicalGapWarning": "...",
-  "profeAdvice": "...",
-  "roadmap": ["...", "..."]
-}
+Responde siempre en JSON.
 """
 
             user_message = f"Tipo: {answers.type}, Presupuesto: {answers.budget}, Tiempo: {answers.timeline}, Nivel: {answers.skill}, Equipo: {answers.teamSize}, Objetivo: {answers.goal}"
@@ -189,7 +172,6 @@ Responde en JSON:
             logger.error(f"Error calling OpenAI: {e}")
             return generate_fallback_recommendation(answers)
     
-    logger.info("No API Key found, using fallback logic")
     return generate_fallback_recommendation(answers)
 
 if __name__ == "__main__":

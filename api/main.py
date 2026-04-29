@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -14,10 +14,10 @@ load_dotenv()
 app = FastAPI(title="Asesor de Arquitectura API")
 handler = Mangum(app)
 
-# Configurar CORS para permitir que React (Vite) en localhost:5173 se conecte
+# Configurar CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,7 +46,6 @@ class Recommendation(BaseModel):
     roadmap: List[str]
 
 # --- Lógica de Respaldo (Fallback) ---
-# Esta lógica se usará mientras no haya una API Key configurada o si falla la IA.
 def generate_fallback_recommendation(answers: Answers) -> Recommendation:
     type_ = answers.type
     budget = answers.budget
@@ -74,7 +73,7 @@ def generate_fallback_recommendation(answers: Answers) -> Recommendation:
     elif isBeginnerCustom:
         logicalGapWarning = "Laguna lógica detectada: El equipo es principiante pero quiere lanzar un sistema complejo en días. Esto resultará en deuda técnica masiva. Recomendación: No-Code o plantillas."
     elif isLargeTeamSmallProject:
-        profeAdvice = "Profe tip: Tienen un equipo grande para un proyecto simple. Dividan bien las tareas para no pisarse los talones; a veces 'muchos cocineros arruinan el caldo' en proyectos pequeños."
+        profeAdvice = "Profe tip: Tienen un equipo grande para un proyecto simple. Dividan bien las tareas para no pisarse los talones."
 
     if timeline == 'days' or (skill == 'beginner' and budget == 'low' and goal != 'scale') or (type_ == 'ecommerce' and budget == 'low' and timeline != 'months'):
         approachTitle = "PVM mediante SaaS / No-Code"
@@ -125,10 +124,10 @@ def generate_fallback_recommendation(answers: Answers) -> Recommendation:
 
 # --- Endpoint Principal ---
 
-@app.post("/diagnostico", response_model=Recommendation)
+# Usamos la ruta completa /api/diagnostico para que sea consistente
+@app.post("/api/diagnostico", response_model=Recommendation)
 async def get_diagnostico(answers: Answers):
     
-    # 1. Comprobar si hay una API Key de OpenAI configurada
     api_key = os.getenv("OPENAI_API_KEY")
     
     if api_key and api_key != "your_api_key_here":
@@ -136,44 +135,21 @@ async def get_diagnostico(answers: Answers):
             client = AsyncOpenAI(api_key=api_key)
             
             system_prompt = """
-Eres el "Asesor de Tecnología by Choke", un profesor de ingeniería de software experto, directo, profesional y con un toque de sabiduría práctica (estilo "senior architect").
-Tu objetivo es ayudar a los alumnos a elegir el stack tecnológico adecuado para su proyecto integrador, evitando "lagunas lógicas" (decisiones que no tienen sentido técnico o económico).
+Eres el "Asesor de Tecnología by Choke", un profesor de ingeniería de software experto.
+Ayuda a los alumnos a elegir el stack tecnológico adecuado, evitando "lagunas lógicas".
 
-Recibirás las siguientes variables clave:
-1. Tipo de Proyecto (ecommerce, pos, landing, saas, mobile, ai)
-2. Presupuesto (low: $0-50, medium: $50-200, high: +$500)
-3. Tiempo (days, weeks, months)
-4. Nivel Técnico del Equipo (beginner, intermediate, advanced)
-5. Tamaño del Equipo (solo, small: 2-3, large: 4+)
-6. Objetivo Principal (learn: académico, build: negocio/PVM, scale: profesional/escalable)
+Variables:
+1. Tipo: {type}
+2. Presupuesto: {budget}
+3. Tiempo: {timeline}
+4. Nivel: {skill}
+5. Equipo: {teamSize}
+6. Objetivo: {goal}
 
-DEBES RESPONDER ÚNICAMENTE EN FORMATO JSON siguiendo este esquema:
-{
-  "approachTitle": "Título corto del enfoque",
-  "approach": "Explicación detallada justificando el stack basado en el equipo, objetivo y restricciones.",
-  "frontend": "Tecnología de frontend",
-  "backend": "Tecnología de backend",
-  "database": "Base de datos",
-  "hosting": "Hosting/Infra",
-  "monthlyCost": "Costo estimado en USD",
-  "logicalGapWarning": "Opcional: Advertencia sobre contradicciones técnicas o de recursos.",
-  "profeAdvice": "Un consejo 'Profe Tip' breve y valioso (especialmente sobre el objetivo o tamaño del equipo).",
-  "roadmap": ["Paso 1", "Paso 2", "Paso 3", "Paso 4"]
-}
-
-Considera el Tamaño del Equipo: si es solo, prioriza herramientas de alta productividad (BaaS, No-code). Si es grande, sugiere frameworks que permitan modularidad y tipado fuerte (TypeScript).
-Considera el Objetivo: si es Académico, sugiere tecnologías tendencia para el CV. Si es Negocio, prioriza velocidad de salida al mercado (time-to-market).
+Responde en JSON.
 """
 
-            user_message = f"""
-Variables del Alumno:
-- Tipo: {answers.type}
-- Presupuesto: {answers.budget}
-- Tiempo: {answers.timeline}
-- Nivel Técnico: {answers.skill}
-- Tamaño Equipo: {answers.teamSize}
-- Objetivo: {answers.goal}
-"""
+            user_message = f"Tipo: {answers.type}, Presupuesto: {answers.budget}, Tiempo: {answers.timeline}, Nivel: {answers.skill}, Equipo: {answers.teamSize}, Objetivo: {answers.goal}"
 
             response = await client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -189,11 +165,8 @@ Variables del Alumno:
             return Recommendation(**result_json)
             
         except Exception as e:
-            print(f"Error calling OpenAI: {e}")
-            # Fallback a la lógica interna si falla la API
             return generate_fallback_recommendation(answers)
     
-    # 2. Si no hay clave, usamos nuestra lógica robusta de respaldo
     return generate_fallback_recommendation(answers)
 
 if __name__ == "__main__":
